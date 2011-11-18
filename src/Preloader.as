@@ -3,6 +3,7 @@ package
 	import asset.*;
 	import flash.display.*;
 	import flash.events.*;
+	import flash.geom.Rectangle;
 	import flash.net.*;
 	import flash.text.*;
 	import flash.utils.*;
@@ -27,9 +28,11 @@ package
 	{
 		private var _bg:Bitmap;
 		private var _timer:Timer;
-		private var _tf:TextField;
 		private var _logo:Bitmap;
 		private var _maskSp:Sprite;
+		private var _canvas:BitmapData;
+		private var _canvasWrap:Bitmap;
+		private var _mapList:Vector.<Dot> = new Vector.<Dot>;
 		
 		/**
 		 * 新しい Preloader インスタンスを作成します。
@@ -59,11 +62,31 @@ package
 			_logo.y = CastDocument.middle - _logo.height / 2;
 			
 			//ロゴマスク
-			_maskSp = new Sprite();
-			_maskSp.x = _logo.x;
-			_maskSp.y = _logo.y + _logo.height;
-			_maskSp.graphics.beginFill(0xFFFFFF);
-			_maskSp.graphics.drawRect(0, -_logo.height, _logo.width, _logo.height);
+			//_maskSp = new Sprite();
+			//_maskSp.x = _logo.x;
+			//_maskSp.y = _logo.y + _logo.height;
+			//_maskSp.graphics.beginFill(0xFFFFFF);
+			//_maskSp.graphics.drawRect(0, -_logo.height, _logo.width, _logo.height);
+			
+			//キャンバス
+			_canvas = new BitmapData(500, 500,true,0x00000000);
+			_canvasWrap = new Bitmap(_canvas);
+			var r:Rectangle = _logo.getRect(CastDocument.stage);
+			r.x += (_canvas.width - CastDocument.stage.stageWidth)/2;
+			r.y += (_canvas.height - CastDocument.stage.stageHeight)/2;
+			_canvas.fillRect(r, 0xFFFFFFFF);
+			for (var y:int = 0; y < _canvas.width; y++) 
+			{
+				for (var x:int = 0; x < _canvas.height; x++) 
+				{
+					if (_canvas.getPixel32(x, y) > 0) 
+					{
+						var dot:Dot = new Dot(x, y);
+						dot.color = _canvas.getPixel32(x, y);
+						_mapList.push(dot);
+					}
+				}
+			}
 			
 			//イベントハンドラ設定
 			stage.addEventListener(Event.RESIZE, stage_resizeHandler)
@@ -71,11 +94,6 @@ package
 			//プログレスバー用タイマー
 			_timer = new Timer(1000/60);
 			_timer.addEventListener(TimerEvent.TIMER, loop);
-			
-			//テキスト
-			_tf = new TextField();
-			_tf.textColor = 0xFFFFFF;
-			
 		}
 		
 		/**
@@ -84,12 +102,34 @@ package
 		 */
 		private function loop(e:TimerEvent):void 
 		{
-			//var per:Number = bytesLoaded / bytesTotal;
-			var per:Number = _timer.currentCount / 3000;
-			_maskSp.scaleY += (0 - per / _maskSp.scaleY) / 10;
-			if (_maskSp.scaleY < 0.01) 
+			var per:Number = bytesLoaded / bytesTotal;
+			//var per:Number = _timer.currentCount / 300;
+			var aFlg:Boolean = true;
+			
+			_canvas.lock();
+			_canvas.fillRect(new Rectangle(0,0,500,500), 0x00000000);
+			var len:uint = _mapList.length;
+			var tarLen:uint = uint(len * per);
+			for (var i:int = 0; i < len; i++) 
+			{
+				var dot:Dot = _mapList[i];
+				if (i <= tarLen) 
 				{
-					_maskSp.scaleY = 0;
+					dot.x += Math.cos(i);
+					dot.y -= Math.random()*10;
+					var argb:ARGB = new ARGB();
+					argb.setPixel(dot.color);
+					argb.a -= 7;
+					if (argb.a > 0) aFlg = false;
+					dot.color = argb.getPixel();
+				}
+				_canvas.setPixel32(dot.x, dot.y, dot.color);
+				
+			}
+			_canvas.unlock();
+			
+			if (aFlg) 
+				{
 					e.target.stop();
 					e.target.removeEventListener(TimerEvent.TIMER, loop);
 					dispatchEvent(new Event("comp"));
@@ -107,7 +147,7 @@ package
 			addCommand(
 				new AddChild(background, _bg),
 				new AddChild(background, _logo),
-				new AddChild(background, _maskSp),
+				new AddChild(background, _canvasWrap),
 				_timer.start()
 			);
 		}
@@ -129,7 +169,7 @@ package
 				new Listen(this,"comp"),
 				new DoTweener(_logo,{y:_logo.y+100,time:0.5,alpha:0,transition:TransitionUtil.easeInExpo}),
 				new RemoveChild(background, _logo),
-				new RemoveChild(background, _maskSp)
+				new RemoveChild(background, _canvasWrap)
 			);
 		}
 		
@@ -143,8 +183,24 @@ package
 			
 			_logo.x = CastDocument.center - _logo.width / 2;
 			_logo.y = CastDocument.middle - _logo.height / 2;
-			_maskSp.x = _logo.x;
-			_maskSp.y = _logo.y + _logo.height;
+			//_maskSp.x = _logo.x;
+			//_maskSp.y = _logo.y + _logo.height;
+			
+			_canvasWrap.x = (CastDocument.stage.stageWidth - _canvasWrap.width) / 2;
+			_canvasWrap.y = (CastDocument.stage.stageHeight - _canvasWrap.height) / 2;
 		}
 	}	
+}
+
+internal class Dot
+{
+	public var x:Number;
+	public var y:Number;
+	public var color:uint;
+	
+	public function Dot(xx:Number,yy:Number)
+	{
+		x = xx;
+		y = yy;
+	}
 }
