@@ -2,13 +2,9 @@ package
 {
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
-	import flash.events.HTTPStatusEvent;
 	import flash.events.IOErrorEvent;
 	import flash.net.URLLoader;
-	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
-	import jp.iixx.mrhdms.util.DebugUtil;
-	import jp.nium.utils.XMLUtil;
 	/**
 	 * Twitterのパブリックタイムラインを取得してごにょるクラス
 	 * @author Hidemasa Mori

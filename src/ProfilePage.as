@@ -3,14 +3,15 @@ package
 	import asset.Profile;
 	import caurina.transitions.Tweener;
 	import flash.events.MouseEvent;
+	import jp.iixx.mrhdms.util.DateUtil;
 	import jp.progression.casts.*;
+	import jp.progression.commands.*;
 	import jp.progression.commands.display.*;
 	import jp.progression.commands.lists.*;
 	import jp.progression.commands.managers.*;
 	import jp.progression.commands.media.*;
 	import jp.progression.commands.net.*;
 	import jp.progression.commands.tweens.*;
-	import jp.progression.commands.*;
 	import jp.progression.data.*;
 	import jp.progression.events.*;
 	import jp.progression.scenes.*;
@@ -35,11 +36,9 @@ package
 			
 			//年齢表記
 			var now:Date = new Date();
-			var birth:Date = new Date(1983, 11, 3);
-			var diff:Number = now.getTime() - birth.getTime();
-			
-			var age:uint = uint(diff / 1000 / 60 / 60 / 24 / 365);
-			var date:uint = uint(diff / 1000 / 60 / 60 / 24 % 365);
+			var birth:Date = new Date(1983, 10, 3);
+			var age:uint = uint(DateUtil.diffYear(birth, now));
+			var date:uint = uint(DateUtil.diffDate(birth, now, true));
 			_view.ageTxt.text = "（" + age.toString() + "歳と" + date.toString() + "日）";
 			
 			addChild(_view);
